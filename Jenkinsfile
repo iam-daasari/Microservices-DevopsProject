@@ -41,10 +41,12 @@ pipeline {
                 }                
 
             stage('compile adservice code') {
-                echo "===== stage 3:Compiling the adservice code ====="
-                dir('src/adservice'){
+               steps {
+                 echo "===== stage 3:Compiling the adservice code ====="
+                 dir('src/adservice'){
                     sh 'mvn compile'
-                }
+                 }
+               }     
 
                 post {
                     success {
