@@ -79,7 +79,7 @@ pipeline {
                     echo "===== stage 4: sonarcloud analysis ====="
                     withSonarQubeEnv('SonarQube-Server') {
                         dir('src/adservice') {
-                            sh 'mvn sonar:sonar'
+                            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
                         }
                     }
                 }
