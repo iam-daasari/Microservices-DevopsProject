@@ -10,7 +10,7 @@ pipeline {
                 steps {
                      echo "===== Stage 1:pulling code from github repostiory ====="
                      checkout scm 
-
+                }
                      post {
                         success {
                             echo 'code pull is successfully completed'
@@ -19,7 +19,6 @@ pipeline {
                             echo 'failed pulling the code from github repo'
                         }
                      }
-                }
             }
 
                 stage('clean & validate'){
