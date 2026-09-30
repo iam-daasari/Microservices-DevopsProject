@@ -56,6 +56,45 @@ pipeline {
                 }
             }
 
+          stage('Unit-Test of adservice') {
+                steps{
+                    echo "===== stage 4: Running Unit Tests of adservice ====="
+                    dir('src/adservice') {
+                        sh 'mvn test'
+                    }
+                }
+                post {
+                    always {
+                        junit 'src/adservice/target/surefire-reports/*.xml'
+                    }
+                    success {
+                        echo "successfully completed unit-test of adservice"
+                    }
+                    failure {
+                        echo "unit-test failed!  Fix before proceeding"
+                    }
+                }
+            }
+
+            stage('sonarqube analysis') {
+                steps {
+                    echo "===== stage 4: sonarcloud analysis ====="
+                    withSonarQubeEnv('SonarQube-Server') {
+                        dir('src/adservice') {
+                            sh 'mvn sonar:sonar'
+                        }
+                    }
+                }
+                post {
+                    success {
+                        echo "SonarQube analysis successfully completed"
+                    }
+                    failure {
+                        echo "SonarQube analysis failed!Check sonarQube server console logs "
+                    }
+                }
+            }
+
 
         }
 }
