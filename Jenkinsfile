@@ -65,9 +65,6 @@ pipeline {
                     }
                 }
                 post {
-                    always {
-                        junit 'src/adservice/target/surefire-reports/*.xml'
-                    }
                     success {
                         echo "successfully completed unit-test of adservice"
                     }
