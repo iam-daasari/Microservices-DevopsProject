@@ -93,6 +93,14 @@ pipeline {
                 }
             }
 
+           stage('Trivy File Scan (Sequential)') {
+            steps {
+                dir('src/adservice') {
+                    sh 'docker run --rm -v $(pwd):/workspace aquasec/trivy:latest fs --severity HIGH,CRITICAL --format table /workspace'
+                }
+            }
+        }
+
 
         }
 }
