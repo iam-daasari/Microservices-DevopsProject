@@ -74,12 +74,14 @@ pipeline {
                 }
             }
 
-            stage('sonarqube analysis') {
-                steps {
-                    echo "===== stage 4: sonarcloud analysis ====="
-                    withSonarQubeEnv('SonarQube-Server') {
-                        dir('src/adservice') {
-                            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+        stage('Parallel Quality & Security Checks') {
+           parallel {
+               stage('sonarqube analysis') {
+                   steps {
+                       echo "===== stage 4: sonarqube analysis ====="
+                       withSonarQubeEnv('SonarQube-Server') {
+                            dir('src/adservice') {
+                               sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
                         }
                     }
                 }
@@ -108,7 +110,16 @@ pipeline {
                 }
             }
         }
-
+        post {
+            success {
+                        echo "trivy security scanning successfully completed"
+                    }
+            failure {
+                echo "Trivy scan detected HIGH/CRITICAL vulnerabilities!"
+            }
+         }
+      }
+   }
 
         }
 }
