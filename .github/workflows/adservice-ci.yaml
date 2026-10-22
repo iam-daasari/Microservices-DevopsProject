@@ -9,14 +9,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-test-and-scan:
+  # Stage 1: Build & Unit Test
+  build-and-test:
+    name: "Build & Test"
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -39,6 +38,15 @@ jobs:
           cd src/adservice
           mvn test
 
+  # Stage 2 (Parallel): Trivy File System Scan
+  security-scan:
+    name: "Trivy FS Scan"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Trivy FS Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -47,7 +55,24 @@ jobs:
           severity: 'HIGH,CRITICAL'
           format: 'table'
 
-      - name: SonarQube Analysis
+  # Stage 3 (Parallel): SonarQube Code Analysis
+  code-quality:
+    name: "SonarQube Analysis"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: SonarQube Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -56,6 +81,15 @@ jobs:
           mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+  # Stage 4: Docker Build & Image Scan
+  docker-build-and-scan:
+    name: "Docker Build & Image Scan"
+    needs: [security-scan, code-quality]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Docker Build
         run: |
