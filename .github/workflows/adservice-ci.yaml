@@ -1,0 +1,70 @@
+name: Adservice CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "src/adservice/**"
+      - ".github/workflows/adservice-ci.yaml"
+  workflow_dispatch:
+
+jobs:
+  build-test-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Clean & Validate
+        run: |
+          cd src/adservice
+          mvn clean validate
+
+      - name: Compile Code
+        run: |
+          cd src/adservice
+          mvn compile
+
+      - name: Unit Test
+        run: |
+          cd src/adservice
+          mvn test
+
+      - name: Trivy FS Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'src/adservice'
+          severity: 'HIGH,CRITICAL'
+          format: 'table'
+
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          cd src/adservice
+          mvn sonar:sonar \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+      - name: Docker Build
+        run: |
+          cd src/adservice
+          docker build -t adservice:${{ github.run_number }} .
+
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'adservice:${{ github.run_number }}'
+          severity: 'HIGH,CRITICAL'
+          format: 'table'
