@@ -108,8 +108,7 @@ pipeline {
                      --format table /workspace
                     '''
                 }
-            }
-        }
+            }        
         post {
             success {
                         echo "trivy security scanning successfully completed"
@@ -117,7 +116,8 @@ pipeline {
             failure {
                 echo "Trivy scan detected HIGH/CRITICAL vulnerabilities!"
             }
-         }
+          }
+        }
       }
    }
 
