@@ -121,5 +121,34 @@ pipeline {
       }
    }
 
+        stage('Docker Build adservice') {
+            steps {
+                dir('src/adservice') {
+                    sh 'docker build -t adservice:${BUILD_NUMBER} .'
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh '''
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      aquasec/trivy:latest image \
+                      --severity HIGH,CRITICAL \
+                      --format table \
+                      adservice:${BUILD_NUMBER}
+                '''
+            }
+            post {
+                success {
+                    echo "Trivy container image scan passed!"
+                }
+                failure {
+                    echo "Trivy container scan detected vulnerabilities!"
+                }
+            }
+        }
+
         }
 }
