@@ -16,8 +16,8 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/target/adservice-*.jar /app/
+COPY --from=builder /app/target/adservice-*.jar /app/adservice.jar
 
 EXPOSE 9555
 
-ENTRYPOINT ["sh", "-c", "java", "-jar", "/app/adservice-*.jar"]
+ENTRYPOINT ["java", "-jar", "/app/adservice.jar"]
