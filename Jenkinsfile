@@ -184,8 +184,8 @@ pipeline {
       post {
         always {
             sh """
-                docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true
-                docker rmi ${ECR_URL}/${IMAGE_NAME}:${IMAGE_TAG} || true
+                docker rmi ${IMAGE_NAME}:$BUILD_NUMBER} || true
+                docker rmi ${ECR_URL}/${IMAGE_NAME}:${BUILD_NUMBER} || true
                 docker rmi ${ECR_URL}/${IMAGE_NAME}:latest || true
             """
         }
