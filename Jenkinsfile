@@ -1,11 +1,18 @@
 pipeline {
     agent any
 
-        tools{
-            maven 'Maven'
-        }
+    environment {
+        AWS_ACCOUNT_ID = '516466084972'
+        AWS_REGION     = 'ap-south-2'
+        IMAGE_NAME     = 'adservice'
+        ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    }       
 
-        stages {
+    tools{
+         maven 'Maven'
+    }
+
+    stages {
             stage('checkout code') {
                 steps {
                      echo "===== Stage 1:pulling code from github repostiory ====="
@@ -21,7 +28,7 @@ pipeline {
                      }
             }
 
-                stage('clean & validate'){
+            stage('clean & validate'){
                     steps {
                         echo "===== stage 2: cleaning the older build files and validating the pom.xml ====="
                         dir('src/adservice') {
@@ -150,5 +157,43 @@ pipeline {
             }
         }
 
+       stage('Push to Amazon ECR') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        # AWS ECR Login
+                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URL}
+                        
+                        # Tag Images
+                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_URL}/${IMAGE_NAME}:${BUILD_NUMBER}
+                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_URL}/${IMAGE_NAME}:latest
+
+                        # Push to ECR
+                        docker push ${ECR_URL}/${IMAGE_NAME}:${BUILD_NUMBER}
+                        docker push ${ECR_URL}/${IMAGE_NAME}:latest
+                    '''
+                }
+            }
         }
+
+        }
+
+      post {
+        always {
+            sh """
+                docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true
+                docker rmi ${ECR_URL}/${IMAGE_NAME}:${IMAGE_TAG} || true
+                docker rmi ${ECR_URL}/${IMAGE_NAME}:latest || true
+            """
+        }
+        success {
+            echo "Successfully pushed ${IMAGE_NAME} image to Amazon ECR!"
+        }
+        failure {
+            echo "Pipeline failed! Please check logs."
+        }
+    }
 }
