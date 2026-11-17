@@ -30,7 +30,9 @@ pipeline {
 
         stage('Trivy Filesystem Scan') {
             steps {
-                trivyScan.fsScan("${SERVICE_DIR}")
+                script {
+                   trivyScan.fsScan("${SERVICE_DIR}")
+               }
             }
         }
 
