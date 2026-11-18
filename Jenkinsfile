@@ -6,6 +6,7 @@ pipeline {
     environment {
         AWS_ACCOUNT_ID = '516466084972'
         AWS_REGION     = 'ap-south-2'
+        CLUSTER_NAME   = 'microservices-cluster'
         IMAGE_NAME     = 'adservice'
         SERVICE_DIR    = 'src/adservice'
         ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
@@ -31,8 +32,8 @@ pipeline {
         stage('Trivy Filesystem Scan') {
             steps {
                 script {
-                   trivyScan.fsScan("${SERVICE_DIR}")
-               }
+                    trivyScan.fsScan("${SERVICE_DIR}")
+                }
             }
         }
 
@@ -44,6 +45,27 @@ pipeline {
                     imageTag:   "${BUILD_NUMBER}",
                     awsRegion:  "${AWS_REGION}",
                     ecrUrl:     "${ECR_URL}"
+                )
+            }
+        }
+
+        stage('Production Deployment Approval Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    input message: 'Approve Production Helm Deployment to AWS EKS?', ok: 'Approve & Deploy'
+                }
+            }
+        }
+
+        stage('Atomic Helm Deploy to EKS') {
+            steps {
+                helmDeploy(
+                    awsRegion:   "${AWS_REGION}",
+                    clusterName: "${CLUSTER_NAME}",
+                    releaseName: 'online-boutique',
+                    chartPath:   './helm-chart',
+                    namespace:   'prod',
+                    imageTag:    'latest'
                 )
             }
         }

@@ -1,0 +1,3 @@
+ecrRegistry: "516466084972.dkr.ecr.ap-south-2.amazonaws.com"
+imageTag: "latest"
+environment: "production"
